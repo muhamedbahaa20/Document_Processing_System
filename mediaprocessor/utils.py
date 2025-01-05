@@ -4,9 +4,9 @@ import base64
 import fitz 
 
 def save_base64_file(data, file_name):
-    format, imgstr = data.split(';base64,')
+    format, filestr = data.split(';base64,')
     ext = format.split('/')[-1]
-    file_data = ContentFile(base64.b64decode(imgstr), name=f"{file_name}.{ext}")
+    file_data = ContentFile(base64.b64decode(filestr), name=f"{file_name}.{ext}")
     return file_data
 
 def get_image_details(file_path,file_name):

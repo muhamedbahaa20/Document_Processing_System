@@ -1,10 +1,7 @@
 from io import BytesIO
 from rest_framework.decorators import api_view
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from django.core.files.storage import default_storage
-from django.conf import settings
 import os
 from .models import UploadedFile
 from .serializers import UploadedFileSerializer
@@ -18,16 +15,19 @@ def convert_pdf_to_image(request):
     try:
         file_id = request.data['id']
         file = UploadedFile.objects.get(pk=file_id, file_type='pdf')
+        images = []
 
         pdf = fitz.open(file.file.path)
-        page = pdf[0]
-        pix = page.get_pixmap()
-        img_path = file.file.path.replace('.pdf', '.png')
-        pix.save(img_path)
-
-        new_file = UploadedFile.objects.create(file=img_path, file_type='image',file_name=file.file_name)
-        serializer = UploadedFileSerializer(new_file)
-        return Response(serializer.data)
+        base_name = os.path.splitext(os.path.basename(file.file.name))[0]
+        for index ,page in enumerate(pdf):
+            pix = page.get_pixmap()
+            img_path = file.file.path.replace('.pdf', '.png').replace(file.file_name,file.file_name+f'{index}')
+            pix.save(img_path)
+            new_file = UploadedFile.objects.create(file=img_path, file_type='image',file_name=file.file_name)
+            serializer = UploadedFileSerializer(new_file)
+            images.append(serializer.data)
+        
+        return Response(images)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
